@@ -1,16 +1,19 @@
 import React, { Component } from 'react';
-import axios from 'axios';
-import { Card, Table, ButtonGroup, Button } from 'react-bootstrap';
+import { Card, Table, ButtonGroup, Button, Spinner } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faList, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import MyToast from './MyToast';
+import api from '../api';
 
 class VoitureListe extends Component {
   constructor(props) {
     super(props);
     this.state = {
       voitures: [],
-      show: false
+      show: false,
+      toastMessage: '',
+      toastType: 'success',
+      loading: false
     };
   }
 
@@ -19,43 +22,63 @@ class VoitureListe extends Component {
   }
 
   findAllVoitures = () => {
-    axios
-      .get('http://localhost:8080/voitures')
+    this.setState({ loading: true });
+    api
+      .get('/voitures')
       .then((response) => response.data)
       .then((data) => {
-        this.setState({ voitures: data });
+        this.setState({ voitures: data, loading: false });
       })
       .catch((error) => {
         console.error('Erreur lors du chargement des voitures', error);
+        this.showToast(
+          `Erreur lors du chargement des voitures : ${error.response?.status || ''} ${
+            error.response?.statusText || ''
+          }`,
+          'danger'
+        );
+        this.setState({ loading: false });
       });
   };
 
   deleteVoiture = (voitureId) => {
-    axios
-      .delete(`http://localhost:8080/voitures/${voitureId}`)
+    api
+      .delete(`/voitures/${voitureId}`)
       .then(() => {
-        this.setState({
-          voitures: this.state.voitures.filter((voiture) => voiture.id !== voitureId),
-          show: true
-        });
-        setTimeout(() => this.setState({ show: false }), 3000);
+        this.setState(
+          {
+            voitures: this.state.voitures.filter((voiture) => voiture.id !== voitureId)
+          },
+          () => this.showToast('Voiture supprimée avec succès.', 'danger')
+        );
       })
       .catch((error) => {
         console.error('Erreur lors de la suppression de la voiture', error);
+        this.showToast('Erreur lors de la suppression de la voiture.', 'danger');
       });
   };
 
+  showToast = (message, type = 'success') => {
+    this.setState({ show: true, toastMessage: message, toastType: type });
+    setTimeout(() => this.setState({ show: false }), 3000);
+  };
+
   render() {
-    const { voitures, show } = this.state;
+    const { voitures, show, toastMessage, toastType, loading } = this.state;
 
     return (
       <Card className="border border-dark bg-dark text-white">
-        <MyToast show={show} message={'Voiture supprimée avec succès.'} type={'danger'} />
+        <MyToast show={show} message={toastMessage} type={toastType} />
         <Card.Header>
           <FontAwesomeIcon icon={faList} className="mr-2" /> Liste des Voitures
         </Card.Header>
         <Card.Body>
-          <Table bordered hover striped variant="dark">
+          {loading ? (
+            <div className="text-center my-4">
+              <Spinner animation="border" variant="light" />
+            </div>
+          ) : (
+            <Table bordered hover striped variant="dark">
             <thead>
               <tr>
                 <th>Marque</th>
@@ -100,7 +123,8 @@ class VoitureListe extends Component {
                 ))
               )}
             </tbody>
-          </Table>
+            </Table>
+          )}
         </Card.Body>
       </Card>
     );

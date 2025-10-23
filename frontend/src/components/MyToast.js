@@ -8,10 +8,11 @@ const toastCss = {
   zIndex: 9999
 };
 
-const MyToast = ({ show, message, type }) => {
+const MyToast = ({ show, message, type = 'success' }) => {
+  const variant = type || 'success';
   return (
     <div style={show ? toastCss : { display: 'none' }}>
-      <Toast className={`border border-${type} bg-${type} text-white`} show={show} delay={3000} autohide>
+      <Toast className={`border border-${variant} bg-${variant} text-white`} show={show} delay={3000} autohide>
         <Toast.Body>{message}</Toast.Body>
       </Toast>
     </div>

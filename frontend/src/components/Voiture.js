@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import axios from 'axios';
 import { Card, Form, Button, Col } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlusSquare, faSave, faUndo } from '@fortawesome/free-solid-svg-icons';
 import MyToast from './MyToast';
+import api from '../api';
 
 class Voiture extends Component {
   initialState = {
@@ -19,6 +19,8 @@ class Voiture extends Component {
     super(props);
     this.state = {
       show: false,
+      toastMessage: '',
+      toastType: 'success',
       ...this.initialState
     };
   }
@@ -41,16 +43,18 @@ class Voiture extends Component {
       proprietaireId: 1
     };
 
-    axios
-      .post('http://localhost:8080/voitures', voiture)
+    api
+      .post('/voitures', voiture)
       .then((response) => {
         if (response.data != null) {
-          this.setState({ show: true, ...this.initialState });
-          setTimeout(() => this.setState({ show: false }), 3000);
+          this.setState({ ...this.initialState }, () =>
+            this.showToast('Voiture enregistrée avec succès.', 'success')
+          );
         }
       })
       .catch((error) => {
         console.error('Erreur lors de la sauvegarde de la voiture', error);
+        this.showToast("Erreur lors de l'enregistrement de la voiture.", 'danger');
       });
   };
 
@@ -58,12 +62,17 @@ class Voiture extends Component {
     this.setState(this.initialState);
   };
 
+  showToast = (message, type = 'success') => {
+    this.setState({ show: true, toastMessage: message, toastType: type });
+    setTimeout(() => this.setState({ show: false }), 3000);
+  };
+
   render() {
-    const { marque, modele, couleur, matricule, immatricule, prix, show } = this.state;
+    const { marque, modele, couleur, matricule, immatricule, prix, show, toastMessage, toastType } = this.state;
 
     return (
       <Card className="border border-dark bg-dark text-white">
-        <MyToast show={show} message={'Voiture enregistrée avec succès.'} type={'success'} />
+        <MyToast show={show} message={toastMessage} type={toastType} />
         <Card.Header>
           <FontAwesomeIcon icon={faPlusSquare} className="mr-2" />
           Ajouter une Voiture
